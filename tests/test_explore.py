@@ -388,3 +388,11 @@ def test_html_report(tmp_path) -> None:
     html = next(tmp_path.glob("*.html")).read_text()
     assert info.value.token in html
     assert "<script" in html and "ordered_writes" in html
+
+
+def test_stats_report_the_exploration_seed() -> None:
+    async def fine() -> None:
+        pass
+
+    assert detangle.explore(fine, runs=3, seed=99).seed == 99
+    assert detangle.explore(fine, runs=3, seed=99, strategy="pct").seed == 99

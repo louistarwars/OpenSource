@@ -393,7 +393,8 @@ def explore(
     stats.strategy = strat.describe()
     stats.seed = getattr(strat, "seed", None)
     if isinstance(strat, Portfolio):
-        stats.seed = getattr(strat.strategies[0], "seed", None)
+        seeds = [getattr(s, "seed", None) for s in strat.strategies]
+        stats.seed = next((seed for seed in seeds if seed is not None), None)
     deadline = started + max_duration if max_duration else None
     for index in range(runs):
         result = runner.run(strat, index)
