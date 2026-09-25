@@ -1,0 +1,93 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "detangle"
+dynamic = ["version"]
+description = "Deterministic simulation testing for Python asyncio: find race conditions, deadlocks and cancellation bugs, then replay them exactly."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "louistarwars and the detangle contributors" }]
+keywords = [
+    "asyncio",
+    "testing",
+    "concurrency",
+    "race-condition",
+    "deadlock",
+    "deterministic-simulation",
+    "model-checking",
+    "fuzzing",
+    "linearizability",
+    "pytest",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: AsyncIO",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Quality Assurance",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "hypothesis>=6", "ruff>=0.5", "mypy>=1.10"]
+
+[project.urls]
+Homepage = "https://github.com/louistarwars/OpenSource"
+Documentation = "https://github.com/louistarwars/OpenSource/tree/main/docs"
+Issues = "https://github.com/louistarwars/OpenSource/issues"
+
+[project.entry-points.pytest11]
+detangle = "detangle.pytest_plugin"
+
+[project.scripts]
+detangle = "detangle.__main__:main"
+
+[tool.hatch.version]
+path = "src/detangle/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/detangle"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+xfail_strict = true
+filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PIE", "PL"]
+ignore = [
+    "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "PLW0603", "PLC0415",
+    "SIM105", "RUF012", "B011", "PLW2901",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/detangle/_html.py" = ["E501"]
+"tests/**" = ["B", "PLR", "SIM", "RUF", "PLW"]
+"examples/**" = ["B", "PLR", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/detangle"]
+strict = true
+warn_unreachable = false
+disallow_any_generics = false
