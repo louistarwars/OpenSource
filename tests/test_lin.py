@@ -261,3 +261,36 @@ def test_double_completion_is_an_error() -> None:
     history.ok(op, 1)
     with pytest.raises(ValueError):
         history.ok(op, 2)
+
+
+class BankAccount(Model):
+    """The custom model from docs/linearizability.md."""
+
+    name = "account"
+
+    def init(self) -> int:
+        return 0
+
+    def step(self, state: Any, op: Operation) -> tuple[bool, Any]:
+        if op.f == "deposit":
+            return True, state + op.arg
+        if op.f == "withdraw":
+            if op.status == "ok" and op.output is False:
+                return True, state
+            return (state >= op.arg), state - op.arg
+        if op.f == "balance":
+            return (op.status != "ok" or op.output == state), state
+        raise ValueError(op.f)
+
+
+def test_custom_model_from_docs() -> None:
+    ok = build(
+        [
+            (1, "deposit", 10, None, 1, 2),
+            (2, "withdraw", 5, True, 3, 4),
+            (1, "balance", None, 5, 5, 6),
+        ]
+    )
+    bad = build([(1, "deposit", 10, None, 1, 2), (2, "withdraw", 50, True, 3, 4)])
+    assert check(ok, BankAccount()).ok
+    assert not check(bad, BankAccount()).ok

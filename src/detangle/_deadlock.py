@@ -147,6 +147,8 @@ def analyze(loop: SimLoop, main: asyncio.Future[Any]) -> DeadlockReport:
             description = f"for all items of {what} to be processed"
         elif kind == "barrier":
             description = f"on {what}"
+        elif kind == "mailbox" and primitive is not None:
+            description = f"for a message on {primitive!r} (no sender can run)"
         elif kind == "stream":
             description = "for data from a stream (the peer never sends any)"
         elif kind == "taskgroup" and primitive is not None:
@@ -188,26 +190,37 @@ def analyze(loop: SimLoop, main: asyncio.Future[Any]) -> DeadlockReport:
     return DeadlockReport(blocked=blocked, cycles=cycles, main_label=main_label)
 
 
-def _find_cycles(edges: dict[str, list[str]]) -> list[list[str]]:
+def _find_cycles(edges: dict[str, list[str]], limit: int = 5) -> list[list[str]]:
+    """Up to *limit* distinct elementary cycles, found in linear time (one per back edge)."""
     cycles: list[list[str]] = []
     seen: set[tuple[str, ...]] = set()
+    state: dict[str, int] = {}  # 1 = on the DFS stack, 2 = finished
 
-    def visit(node: str, path: list[str], on_path: set[str]) -> None:
-        for nxt in edges.get(node, ()):
-            if nxt in on_path:
-                cycle = path[path.index(nxt) :]
-                start = cycle.index(min(cycle))
-                canonical = tuple(cycle[start:] + cycle[:start])
-                if canonical not in seen:
-                    seen.add(canonical)
-                    cycles.append(list(canonical))
-            elif len(path) < 64:
-                path.append(nxt)
-                on_path.add(nxt)
-                visit(nxt, path, on_path)
-                on_path.discard(nxt)
+    for root in edges:
+        if state.get(root) or len(cycles) >= limit:
+            continue
+        stack: list[tuple[str, int]] = [(root, 0)]
+        path: list[str] = [root]
+        state[root] = 1
+        while stack:
+            node, index = stack[-1]
+            successors = edges.get(node, [])
+            if index < len(successors):
+                stack[-1] = (node, index + 1)
+                nxt = successors[index]
+                if state.get(nxt) == 1:
+                    cycle = path[path.index(nxt) :]
+                    start = cycle.index(min(cycle))
+                    canonical = tuple(cycle[start:] + cycle[:start])
+                    if canonical not in seen and len(cycles) < limit:
+                        seen.add(canonical)
+                        cycles.append(list(canonical))
+                elif not state.get(nxt):
+                    state[nxt] = 1
+                    stack.append((nxt, 0))
+                    path.append(nxt)
+            else:
+                state[node] = 2
+                stack.pop()
                 path.pop()
-
-    for node in edges:
-        visit(node, [node], {node})
     return cycles

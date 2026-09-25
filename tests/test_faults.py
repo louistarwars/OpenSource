@@ -228,3 +228,26 @@ def test_inject_cancellation_marks_task() -> None:
     with pytest.raises(BugFound) as info:
         detangle.explore(main, runs=50, seed=2)
     assert isinstance(info.value.report.failure.exception, asyncio.CancelledError)
+
+
+def test_mailbox_wait_is_explained() -> None:
+    async def main() -> None:
+        inbox = detangle.network().mailbox(9, host="n1")
+        await inbox.recv()
+
+    with pytest.raises(detangle.DeadlockError) as info:
+        detangle.run(main)
+    assert "for a message on <Mailbox n1:9>" in str(info.value)
+
+
+def test_cycle_search_is_linear_and_bounded() -> None:
+    from detangle._deadlock import _find_cycles
+
+    assert _find_cycles({"a": ["b"], "b": ["a"], "c": ["d"], "d": ["c"], "e": ["a"]}) == [
+        ["a", "b"],
+        ["c", "d"],
+    ]
+    # A dense graph must not blow up.
+    nodes = [f"t{i}" for i in range(200)]
+    dense = {n: [m for m in nodes if m != n] for n in nodes}
+    assert 1 <= len(_find_cycles(dense)) <= 5

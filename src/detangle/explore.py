@@ -92,15 +92,16 @@ class BugReport:
     def render(self, trace_limit: int = 80) -> str:
         f = self.failure
         lines: list[str] = []
-        where = (
-            "a saved example"
-            if self.source == "database"
-            else f"{self.runs} run{'s' if self.runs != 1 else ''}"
-        )
+        runs = f"{self.runs} run{'s' if self.runs != 1 else ''}"
         if self.source == "replay":
             lines.append(f"detangle: replaying {self.token} reproduces a bug in {self.name}")
+        elif self.source == "database":
+            lines.append(
+                f"detangle found a bug in {self.name}: a failing schedule saved by a previous "
+                "run still fails (delete .detangle/ to forget it)"
+            )
         else:
-            lines.append(f"detangle found a bug in {self.name} after {where} [{self.strategy}]")
+            lines.append(f"detangle found a bug in {self.name} after {runs} [{self.strategy}]")
         lines.append("")
         if f.kind == "deadlock" and f.deadlock is not None:
             lines.extend("  " + line for line in f.deadlock.render().splitlines())
@@ -332,6 +333,8 @@ def explore(
 
     runner = _Runner(_resolve(fn), cfg)
     stats = ExploreStats(name=name)
+    nodeid = os.environ.get("PYTEST_CURRENT_TEST", "").rsplit(" (", 1)[0].strip()
+    db_key = f"{name}|{nodeid}" if nodeid else name
     started = time.monotonic()
 
     if replay:
@@ -360,11 +363,11 @@ def explore(
         return stats
 
     if db is not None:
-        for token in db.fetch(name):
+        for token in db.fetch(db_key):
             try:
                 values = decode_token(token)
             except ValueError:
-                db.delete(name, token)
+                db.delete(db_key, token)
                 continue
             stats.replayed_examples += 1
             result = runner.replay(values)
@@ -381,10 +384,10 @@ def explore(
                     report_dir=report_dir,
                 )
                 if report.token != token:
-                    db.delete(name, token)
-                    db.save(name, report.token)
+                    db.delete(db_key, token)
+                    db.save(db_key, report.token)
                 _raise(report)
-            db.delete(name, token)
+            db.delete(db_key, token)
 
     strat = make_strategy(strategy, seed)
     stats.strategy = strat.describe()
@@ -409,7 +412,7 @@ def explore(
                 report_dir=report_dir,
             )
             if db is not None:
-                db.save(name, report.token)
+                db.save(db_key, report.token)
             _raise(report)
         if strat.exhausted:
             stats.exhausted = not isinstance(strat, (FIFO, Replay))

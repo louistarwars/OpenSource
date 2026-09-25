@@ -12,8 +12,8 @@ from collections.abc import Iterator
 from types import FrameType, TracebackType
 from typing import Any, NamedTuple
 
-_ASYNCIO_DIR = os.path.dirname(asyncio.__file__)
-_DETANGLE_DIR = os.path.dirname(os.path.abspath(__file__))
+_ASYNCIO_DIR = os.path.realpath(os.path.dirname(asyncio.__file__))
+_DETANGLE_DIR = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
 _STDLIB_DIRS = tuple(
     {
         os.path.realpath(p)

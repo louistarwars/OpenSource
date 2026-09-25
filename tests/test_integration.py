@@ -236,3 +236,34 @@ def test_loop_can_be_used_directly() -> None:
 
     assert loop.run_until_complete(main()) == 5
     loop.close()
+
+
+def test_database_keys_include_pytest_parameters(
+    pytester: pytest.Pytester, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pytester.makepyfile(
+        test_param=textwrap.dedent(
+            """
+            import asyncio
+            import detangle
+            import pytest
+
+            @pytest.mark.parametrize("broken", [False, True])
+            @detangle.test(runs=30, seed=1)
+            async def test_param(broken):
+                log = []
+                async def w(name):
+                    await asyncio.sleep(0.01)
+                    log.append(name)
+                await asyncio.gather(w("a"), w("b"))
+                if broken:
+                    assert log == ["a", "b"]
+            """
+        )
+    )
+    monkeypatch.delenv("DETANGLE_DATABASE", raising=False)
+    first = pytester.runpytest()
+    first.assert_outcomes(passed=1, failed=1)
+    second = pytester.runpytest()
+    second.assert_outcomes(passed=1, failed=1)
+    second.stdout.fnmatch_lines(["*a failing schedule saved by a previous run still fails*"])

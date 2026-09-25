@@ -34,6 +34,7 @@ import socket
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any
 
+from . import _instrument
 from ._choices import FAULT, NET
 from ._config import NetConfig
 from ._context import DEFAULT_HOST, current_host, host_name
@@ -991,6 +992,9 @@ class SimNetwork:
             return
         self._trace(f"{_fmt(src)} -> {_fmt(dst)} {_short(message)}")
         box._deliver(message, src)
+
+
+_instrument.PRIMITIVE_CODES[Mailbox.recv.__code__] = ("mailbox", "for a message on a Mailbox")
 
 
 def _short(message: Any, limit: int = 48) -> str:
