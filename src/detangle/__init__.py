@@ -21,7 +21,7 @@ Quick start::
         await asyncio.gather(incr(), incr())
         assert counter["value"] == 2        # fails: lost update found & shrunk
 
-See https://github.com/louistarwars/OpenSource for the documentation.
+See https://github.com/louistarwars/Detangle for the documentation.
 """
 
 from __future__ import annotations

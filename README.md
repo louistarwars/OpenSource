@@ -7,7 +7,7 @@
 Find the race conditions, deadlocks and cancellation bugs hiding in your async code.<br>
 Get them back as a *minimal*, *exactly replayable* schedule.
 
-[![CI](https://github.com/louistarwars/OpenSource/actions/workflows/ci.yml/badge.svg)](https://github.com/louistarwars/OpenSource/actions/workflows/ci.yml)
+[![CI](https://github.com/louistarwars/Detangle/actions/workflows/ci.yml/badge.svg)](https://github.com/louistarwars/Detangle/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![Typed](https://img.shields.io/badge/typing-strict-informational)

@@ -6,7 +6,7 @@ features are all welcome.
 ## Development setup
 
 ```bash
-git clone https://github.com/louistarwars/OpenSource detangle && cd detangle
+git clone https://github.com/louistarwars/Detangle detangle && cd detangle
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 ```
